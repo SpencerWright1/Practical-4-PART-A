@@ -1,44 +1,51 @@
 import AvailableJobList from "@/components/AvailableJobList";
 import NavBar from "@/components/NavBar";
-
 import Container from '@mui/material/Container';
-
-
-const savedJobs = []
-
-const availableJobs = [
-  {
-    "id": 1,
-    "title": "Database Administrator",
-    "date_posted": "2024-04-19",
-    "company": "DataTech Enterprises",
-    "job_type": "Full-time",
-    "location": "Seattle, WA",
-    "description": "We're seeking a skilled Database Administrator to manage and optimize our organization's databases for performance and reliability.",
-    "qualifications": "Strong problem-solving and troubleshooting skills"
-  },
-  {
-    "id": 2,
-    "title": "AI Product Manager",
-    "date_posted": "2024-04-18",
-    "company": "AI Innovations Ltd.",
-    "job_type": "Full-time",
-    "location": "San Francisco, CA",
-    "description": "We're looking for an experienced AI Product Manager to drive the development and commercialization of our AI-based products.",
-    "qualifications": "Excellent communication and leadership skills"
-  }
-]
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [jobs, setJobs] = useState([]);
+  const [savedJobs, setSavedJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchAll() {
+      setLoading(true);
+      const jobsRes = await fetch('/api/jobs');
+      const jobsData = await jobsRes.json();
+      const savedRes = await fetch('/api/saved-jobs');
+      const savedData = await savedRes.json();
+      setJobs(jobsData);
+      setSavedJobs(savedData);
+      setLoading(false);
+    }
+    fetchAll();
+  }, []);
+
+  const handleSave = async (jobId) => {
+    await fetch('/api/saved-jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jobId }),
+    });
+    const savedRes = await fetch('/api/saved-jobs');
+    const savedData = await savedRes.json();
+    setSavedJobs(savedData);
+  };
+
   return (
     <main>
       <NavBar />
       <Container>
-        <AvailableJobList
-          jobs={availableJobs}
-          savedJobs={savedJobs}
-          setSavedJobs={()=> {/* change me! */}}
-        />
+        {loading ? (
+          <div>Loading...</div>
+        ) : (
+          <AvailableJobList
+            jobs={jobs}
+            savedJobs={savedJobs}
+            onSave={handleSave}
+          />
+        )}
       </Container>
     </main>
   );
